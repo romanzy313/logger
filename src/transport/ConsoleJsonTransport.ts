@@ -7,22 +7,17 @@ export default class ConsoleJsonTransport extends BaseLogTransport {
   }
 
   send(logs: StdLog<any>[]) {
-    // size of the logs will be 1, as max batch is set to 1
-    // for (let i = 0; i < logs.length; i++) {
-    //   const log = logs[i];
-    //   const logFn = this.getLogFn(log.logLevel);
-    // }
     const log = logs[0];
     const logFn = this.getLogFn(log.level);
 
     logFn({
-      // maybe do this?
-      ...log.value,
-      // this is more universal:
-      // data: log.value,
+      // maybe do this? but the value needs to be a string
+      // ...log.value,
+      level: log.level,
       severity: log.severity,
+      value: log.value,
       meta: log.meta,
-      time: log.timestamp,
+      time: log.timestamp.toString(),
     });
 
     return Promise.resolve();

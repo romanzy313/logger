@@ -141,6 +141,10 @@ export class Logger<Meta = unknown> extends LoggerChain<Meta> {
     //
     this.config.transports.push(transport);
   }
+
+  async waitForAllTransportsToSend() {
+    return Promise.all(this.config.transports.map((t) => t.waitForAllLogs()));
+  }
 }
 
 // example

@@ -17,7 +17,7 @@ export type BaseLogTransportOptions = {
   flushDelay?: number | null;
 };
 
-type BaseLogTransportInternalOptions = {
+export type BaseLogTransportInternalOptions = {
   minLevel: LogSeverity | LogLevel;
   maxLevel: LogSeverity | LogLevel;
   maxFlushDelay: number | null; // in ms whats the maximum time before flushing the logs
@@ -34,7 +34,7 @@ function processOptions(
 }
 
 export abstract class BaseLogTransport {
-  public options: BaseLogTransportInternalOptions;
+  protected options: BaseLogTransportInternalOptions;
   private dataBuffer: IDataBuffer<StdLog<any>>;
   constructor(
     options: BaseLogTransportOptions,
@@ -44,16 +44,19 @@ export abstract class BaseLogTransport {
 
     if (maxBatchSize <= 1 || options.flushDelay === 0) {
       // dont accumulate, send right away
-      this.dataBuffer = new DataBufferSingle(this.send);
+      this.dataBuffer = new DataBufferSingle(this.send.bind(this));
     } else if (options.flushDelay === null) {
       // accumulate but never autoflush
       // useful in serverless functions, where end of it is awaited
       // to send the logs
-      this.dataBuffer = new DataBufferWithoutTimeout(this.send, maxBatchSize);
+      this.dataBuffer = new DataBufferWithoutTimeout(
+        this.send.bind(this),
+        maxBatchSize
+      );
     } else {
       const flushDelay = options.flushDelay || 1000;
       this.dataBuffer = new DataBufferWithTimeout(
-        this.send,
+        this.send.bind(this),
         maxBatchSize,
         flushDelay
       );
@@ -69,6 +72,10 @@ export abstract class BaseLogTransport {
     // preformat it
 
     this.dataBuffer.push(log);
+  }
+
+  public waitForAllLogs() {
+    return this.dataBuffer.flushAndWaitForAll();
   }
 
   abstract send(logs: StdLog<any>[]): Promise<void>;
