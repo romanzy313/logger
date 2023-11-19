@@ -2,7 +2,8 @@ import { LogLevel, LogSeverity, StdLog } from './types';
 import {
   IDataBuffer,
   DataBufferWithTimeout,
-  DataBufferNoPromise,
+  DataBufferSingle,
+  DataBufferWithoutTimeout,
 } from './utils/DataBuffer';
 
 type TimestampFormatter = 'ISO123123' | 'unix' | (() => any);
@@ -28,7 +29,7 @@ function processOptions(
   return {
     minLevel: opts.minLevel || 0,
     maxLevel: opts.maxLevel || Infinity,
-    maxFlushDelay: null,
+    maxFlushDelay: opts.flushDelay || null,
   };
 }
 
@@ -41,23 +42,21 @@ export abstract class BaseLogTransport {
   ) {
     this.options = processOptions(options);
 
-    if (maxBatchSize == 1 || options.flushDelay === 0) {
+    if (maxBatchSize <= 1 || options.flushDelay === 0) {
       // dont accumulate, send right away
-      this.dataBuffer = new DataBufferNoPromise(this.send);
+      this.dataBuffer = new DataBufferSingle(this.send);
     } else if (options.flushDelay === null) {
       // accumulate but never autoflush
       // useful in serverless functions, where end of it is awaited
       // to send the logs
-      this.dataBuffer = new DataBufferWithTimeout(this.send, {
-        maxInterval: 99999999999999, // TODO make this decent
-        maxCount: maxBatchSize,
-      });
+      this.dataBuffer = new DataBufferWithoutTimeout(this.send, maxBatchSize);
     } else {
       const flushDelay = options.flushDelay || 1000;
-      this.dataBuffer = new DataBufferWithTimeout(this.send, {
-        maxInterval: flushDelay,
-        maxCount: maxBatchSize,
-      });
+      this.dataBuffer = new DataBufferWithTimeout(
+        this.send,
+        maxBatchSize,
+        flushDelay
+      );
     }
   }
 

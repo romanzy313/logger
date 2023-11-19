@@ -4,17 +4,14 @@ type LogEntry = {
   jsonPayload: any;
 };
 
-export type DataBufferConfig = {
-  maxInterval: number;
-  maxCount: number;
-};
-
 export interface IDataBuffer<T> {
   push(item: T): void;
   flush(): Promise<void>;
+  flushAndWaitForAll(): Promise<void>;
 }
 
-export class DataBufferNoPromise<T> implements IDataBuffer<T> {
+// this one is only used in console, so it doesnt really await things
+export class DataBufferSingle<T> implements IDataBuffer<T> {
   constructor(private flushFunction: (data: T[]) => Promise<void>) {}
 
   public push(item: T) {
@@ -24,9 +21,56 @@ export class DataBufferNoPromise<T> implements IDataBuffer<T> {
   public flush() {
     return Promise.resolve();
   }
+  public flushAndWaitForAll() {
+    return Promise.resolve();
+  }
 }
 
-// this does have a timeout
+export class DataBufferWithoutTimeout<T> implements IDataBuffer<T> {
+  private buffer: T[] = [];
+  private i = 0;
+  private pending: Record<number, Promise<void>> = {};
+
+  constructor(
+    private flushFunction: (data: T[]) => Promise<void>,
+    private bufferSize: number
+  ) {}
+
+  public push(item: T) {
+    this.buffer.push(item);
+    if (this.buffer.length >= this.bufferSize) this.flush();
+  }
+
+  public flush() {
+    if (this.buffer.length > 0) {
+      const thisI = this.i++;
+      const promise = new Promise<void>((resolve) => {
+        this.flushFunction(this.buffer)
+          .then((_) => {
+            delete this.pending[thisI];
+            resolve();
+          })
+          // never fail, maybe a retry strategy?
+          .catch((_) => {
+            delete this.pending[thisI];
+            resolve();
+          });
+        this.buffer = [];
+      });
+      this.pending[thisI] = promise;
+      return promise;
+    }
+
+    return Promise.resolve();
+  }
+
+  // instead do a promise all here
+  public async flushAndWaitForAll() {
+    this.flush();
+    const promiseArr = Object.values(this.pending);
+    await Promise.all(promiseArr);
+  }
+}
 
 export class DataBufferWithTimeout<T> implements IDataBuffer<T> {
   private buffer: T[] = [];
@@ -34,41 +78,37 @@ export class DataBufferWithTimeout<T> implements IDataBuffer<T> {
 
   constructor(
     private flushFunction: (data: T[]) => Promise<void>,
-    private opts: DataBufferConfig
+    private bufferSize: number,
+    private flushInterval: number
   ) {
     // is this needed?
-    setInterval(this.flush.bind(this), this.opts.maxInterval);
+    setInterval(this.flush.bind(this), this.flushInterval);
   }
 
   public push(item: T): void {
     this.buffer.push(item);
 
-    if (this.buffer.length >= this.opts.maxCount) {
+    if (this.buffer.length >= this.bufferSize) {
       this.flush();
       // if (this.flushTimeout) {
       //   clearTimeout(this.flushTimeout);
       //   this.flushTimeout = null;
       // }
     } else if (!this.flushTimeout) {
-      this.flushTimeout = setTimeout(
-        this.flush.bind(this),
-        this.opts.maxInterval
-      );
+      this.flushTimeout = setTimeout(this.flush.bind(this), this.flushInterval);
     }
   }
 
   public flush(): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const this2 = this;
-    console.log('this 2', this2);
-
     return new Promise((resolve) => {
-      console.log('IN PROMISE this ', this, 'this2', this2);
-
       if (this.buffer.length > 0) {
-        this.flushFunction(this.buffer).then((v) => {
-          resolve();
-        });
+        this.flushFunction(this.buffer)
+          .then((_) => {
+            resolve();
+          })
+          .catch((_) => {
+            resolve();
+          });
         this.buffer = [];
       }
       if (this.flushTimeout) {
@@ -76,6 +116,11 @@ export class DataBufferWithTimeout<T> implements IDataBuffer<T> {
         this.flushTimeout = null;
       }
     });
+  }
+
+  //TODO finish this
+  public flushAndWaitForAll(): Promise<void> {
+    return Promise.resolve();
   }
 }
 

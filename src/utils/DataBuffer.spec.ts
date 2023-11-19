@@ -10,10 +10,7 @@ describe('DataBuffer', () => {
     flushFunction = vi.fn(async () => {
       // make it async
     });
-    buffer = new DataBufferWithTimeout<number>(flushFunction, {
-      maxCount: 10,
-      maxInterval: 1000,
-    });
+    buffer = new DataBufferWithTimeout<number>(flushFunction, 10, 1000);
     vi.useFakeTimers();
   });
 

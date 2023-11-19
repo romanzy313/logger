@@ -102,8 +102,16 @@ class LoggerChain<Meta> {
   }
 
   // base log methods
+
+  trace(...args: any[]) {
+    this.log(0, 'trace', args);
+  }
+
+  debug(...args: any[]) {
+    this.log(100, 'debug', args);
+  }
+
   info(...args: any[]) {
-    //
     this.log(200, 'info', args);
   }
   warn(...args: any[]) {
