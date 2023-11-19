@@ -1,6 +1,6 @@
 {
-  "name": "placeholder-lib-name",
-  "description": "<<DESCRIPTION>>",
+  "name": "@romanzy/logger",
+  "description": "Simple logger designed to use on serverless platforms with pluggable transport",
   "version": "0.0.0",
   "exports": {
     ".": "./dist/index.js"
@@ -15,14 +15,12 @@
   ],
   "scripts": {
     "dev": "vitest",
-    "build": " pnpm build:tsc",
+    "build": "pnpm build:tsc",
     "build:tsc": "tsc",
     "build:vite": "vite build",
-    "test": "vitest run && playwright test",
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:unit": "vitest run",
-    "test:e2e": "playwright test --trace on",
     "test:publish": "pnpm prepublishOnly && pnpm pack",
     "prepublishOnly": "pnpm clean && pnpm prettier && pnpm lint && pnpm test && pnpm build",
     "clean": "rimraf -rf ./dist && rimraf -rf ./types && rimraf -rf ./*-*.tgz",
@@ -33,7 +31,6 @@
     "prettier:dry": "prettier --config .prettierrc 'src/**/*.ts'"
   },
   "devDependencies": {
-    "@playwright/test": "^1.38.0",
     "@types/node": "^18.17.17",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
@@ -49,10 +46,13 @@
     "vitest": "^0.34.4"
   },
   "license": "MIT",
-  "keywords": [],
+  "keywords": [
+    "logger",
+    "serverless"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/<<GIT-USERNAME>>/placeholder-lib-name.git"
+    "url": "https://github.com/romanzy313/@romanzy/logger.git"
   },
-  "author": "<<AUTHOR>>"
+  "author": "Roman Volovoy"
 }

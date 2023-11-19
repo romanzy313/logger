@@ -1,0 +1,17 @@
+{
+  "name": "@romanzy/logger-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite-node --watch ./src/index.ts"
+  },
+  "dependencies": {
+    "@romanzy/logger": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-node": "^0.34.6"
+  }
+}
