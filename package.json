@@ -31,6 +31,7 @@
     "prettier:dry": "prettier --config .prettierrc 'src/**/*.ts'"
   },
   "devDependencies": {
+    "@google-cloud/logging": "^11.0.0",
     "@types/node": "^18.17.17",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
