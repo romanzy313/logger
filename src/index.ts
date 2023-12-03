@@ -125,6 +125,23 @@ class LoggerChain<Meta> {
     this.log(500, 'fatal', args);
     //
   }
+
+  captureException(error: unknown) {
+    // this will turn an error into an object
+    // const value =
+
+    if (error instanceof Error) {
+      this.error('Exception', {
+        name: error.name,
+        message: error.message,
+        cause: error.cause,
+        stack: error.stack,
+      });
+    } else {
+      // TODO what to do
+      console.warn('bad capture exception logic');
+    }
+  }
 }
 
 export class Logger<Meta = unknown> extends LoggerChain<Meta> {
